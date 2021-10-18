@@ -1,4 +1,4 @@
-use std::io;
+use std::{fmt, io};
 
 /// The `ODriveResult` type is used as a return type for operations which read to
 /// or write from the ODrive.
@@ -14,7 +14,24 @@ pub enum ODriveError {
     /// If you see this, file an issue.
     InvalidMessageReceived(String),
     NoMessageReceived,
-    Io(io::Error)
+    Io(io::Error),
+}
+
+impl std::error::Error for ODriveError {}
+impl fmt::Display for ODriveError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            ODriveError::Axis(err) => write!(f, "Axis error: {:?}", err),
+            ODriveError::Motor(err) => write!(f, "Motor error: {:?}", err),
+            ODriveError::Encoder(err) => write!(f, "Encoder error: {:?}", err),
+            ODriveError::Controller(err) => write!(f, "Controller error: {:?}", err),
+            ODriveError::InvalidMessageReceived(err) => {
+                write!(f, "Invalid message received: {:?}", err)
+            }
+            ODriveError::NoMessageReceived => write!(f, "No message received"),
+            ODriveError::Io(err) => write!(f, "I/O error: {:?}", err),
+        }
+    }
 }
 
 #[repr(u16)]
