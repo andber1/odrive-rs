@@ -295,7 +295,7 @@ impl<T> ODrive<T> where T: Read + Write {
         }
     }
 
-    pub fn read_startup_encoder_index_search(&mut self, axis: AxisID, value: bool) -> ODriveResult<bool> {
+    pub fn read_startup_encoder_index_search(&mut self, axis: AxisID) -> ODriveResult<bool> {
         let response = self.get_axis_config_property(axis, "startup_encoder_index_search")?;
         match response.parse::<u8>() {
             Ok(val) => match val {
@@ -309,7 +309,7 @@ impl<T> ODrive<T> where T: Read + Write {
         }
     }
 
-    pub fn read_startup_encoder_offset_calibration(&mut self, axis: AxisID, value: bool) -> ODriveResult<bool> {
+    pub fn read_startup_encoder_offset_calibration(&mut self, axis: AxisID) -> ODriveResult<bool> {
         let response = self.get_axis_config_property(axis, "startup_encoder_offset_calibration")?;
         match response.parse::<u8>() {
             Ok(val) => match val {
@@ -323,7 +323,7 @@ impl<T> ODrive<T> where T: Read + Write {
         }
     }
 
-    pub fn read_startup_closed_loop_control(&mut self, axis: AxisID, value: bool) -> ODriveResult<bool> {
+    pub fn read_startup_closed_loop_control(&mut self, axis: AxisID) -> ODriveResult<bool> {
         let response = self.get_axis_config_property(axis, "startup_closed_loop_control")?;
         match response.parse::<u8>() {
             Ok(val) => match val {
@@ -337,7 +337,7 @@ impl<T> ODrive<T> where T: Read + Write {
         }
     }
 
-    pub fn read_startup_sensorless_control(&mut self, axis: AxisID, value: bool) -> ODriveResult<bool> {
+    pub fn read_startup_sensorless_control(&mut self, axis: AxisID) -> ODriveResult<bool> {
         let response = self.get_axis_config_property(axis, "startup_sensorless_control")?;
         match response.parse::<u8>() {
             Ok(val) => match val {
