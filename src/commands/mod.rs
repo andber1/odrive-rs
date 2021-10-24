@@ -180,7 +180,7 @@ impl<T> ODrive<T> where T: Write + Read {
 impl<T> ODrive<T> where T: Read + Write {
     /// Retrieves the velocity of a motor, in counts per second.
     pub fn get_velocity(&mut self, axis: AxisID) -> io::Result<Option<f32>> {
-        writeln!(self, "r axis{} .encoder.vel_estimate", axis as u8)?;
+        writeln!(self, "r axis{}.encoder.vel_estimate", axis as u8)?;
         self.flush()?;
         self.read_float()
     }
