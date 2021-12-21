@@ -20,16 +20,25 @@ fn main() {
     settings.baud_rate = 115_200;
 
     // Create serial port
-    let serial = serialport::posix::TTYPort::open(Path::new(&args[1]), &settings).expect("Failed to open port");
+    let serial = serialport::posix::TTYPort::open(Path::new(&args[1]), &settings)
+        .expect("Failed to open port");
 
     // Create odrive connection
     let mut odrive = ODrive::new(serial);
 
-    odrive.run_state(AxisID::Zero, AxisState::ClosedLoopControl, false).unwrap();
-    odrive.run_state(AxisID::One, AxisState::ClosedLoopControl, false).unwrap();
+    odrive
+        .run_state(AxisID::Zero, AxisState::ClosedLoopControl, false)
+        .unwrap();
+    odrive
+        .run_state(AxisID::One, AxisState::ClosedLoopControl, false)
+        .unwrap();
 
-    odrive.set_control_mode(AxisID::Zero, ControlMode::VelocityControl).unwrap();
-    odrive.set_control_mode(AxisID::One, ControlMode::VelocityControl).unwrap();
+    odrive
+        .set_control_mode(AxisID::Zero, ControlMode::VelocityControl)
+        .unwrap();
+    odrive
+        .set_control_mode(AxisID::One, ControlMode::VelocityControl)
+        .unwrap();
 
     loop {
         println!("Forwards");

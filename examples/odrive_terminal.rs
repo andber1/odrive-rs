@@ -1,6 +1,6 @@
 use std::env::args;
-use std::io::{BufRead, BufReader, stdin};
 use std::io::Write;
+use std::io::{stdin, BufRead, BufReader};
 use std::path::Path;
 
 use serialport::SerialPortSettings;
@@ -18,7 +18,8 @@ fn main() {
     settings.baud_rate = 115_200;
 
     // Create serial port
-    let serial = serialport::posix::TTYPort::open(Path::new(&args[1]), &settings).expect("Failed to open port");
+    let serial = serialport::posix::TTYPort::open(Path::new(&args[1]), &settings)
+        .expect("Failed to open port");
 
     // Create odrive connection
     let mut odrive = ODrive::new(serial);

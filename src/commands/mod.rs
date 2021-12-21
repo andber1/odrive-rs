@@ -1,10 +1,10 @@
 use std::fmt::Display;
-use std::io::{BufReader, Error, Read, Write};
 use std::io;
+use std::io::{BufReader, Error, Read, Write};
 use std::time::Instant;
 
-use crate::enumerations::{AxisID, AxisState, ControlMode, EncoderMode};
 use crate::enumerations::errors::{ODriveError, ODriveResult};
+use crate::enumerations::{AxisID, AxisState, ControlMode, EncoderMode};
 
 #[cfg(test)]
 #[cfg_attr(tarpaulin, skip)]
@@ -14,23 +14,32 @@ mod command_tests;
 /// It acts as a newtype around a connection stream.
 /// This has been tested using serial types from `serialport-rs`.
 #[derive(Debug)]
-pub struct ODrive<T> where T: Read {
+pub struct ODrive<T>
+where
+    T: Read,
+{
     io_stream: BufReader<T>,
 }
 
-impl<T> ODrive<T> where T: Read {
+impl<T> ODrive<T>
+where
+    T: Read,
+{
     /// Although any type can be passed in here, it is suggested that the supplied type `T` be
     /// `Read + Write`. Doing so will unlock the full API.
     pub fn new(io_stream: T) -> Self {
         Self {
-            io_stream: BufReader::new(io_stream)
+            io_stream: BufReader::new(io_stream),
         }
     }
 }
 
 /// An implementation of `Write` has been provided as an escape hatch to enable the usage of
 /// operations not yet supported by this library.
-impl<T> Write for ODrive<T> where T: Write + Read {
+impl<T> Write for ODrive<T>
+where
+    T: Write + Read,
+{
     fn write(&mut self, buf: &[u8]) -> Result<usize, Error> {
         self.io_stream.get_mut().write(buf)
     }
@@ -43,13 +52,19 @@ impl<T> Write for ODrive<T> where T: Write + Read {
 /// An implementation of `Write` has been provided as an escape hatch to enable the usage of
 /// operations not yet supported by this library. Be advised that using this implementation may
 /// place the connection into an inconsistent state.
-impl<T> Read for ODrive<T> where T: Read {
+impl<T> Read for ODrive<T>
+where
+    T: Read,
+{
     fn read(&mut self, buf: &mut [u8]) -> Result<usize, Error> {
         self.io_stream.read(buf)
     }
 }
 
-impl<T> ODrive<T> where T: Read {
+impl<T> ODrive<T>
+where
+    T: Read,
+{
     /// Reads the next message sent by the ODrive as a string.
     /// If their is no message, this function should return `None`
     ///
@@ -118,7 +133,10 @@ impl<T> ODrive<T> where T: Read {
     }
 }
 
-impl<T> ODrive<T> where T: Write + Read {
+impl<T> ODrive<T>
+where
+    T: Write + Read,
+{
     /// Move the motor to a position. Use this command if you have a real-time controller which
     /// is streaming setpoints and tracking a trajectory.
     /// `axis` The motor to be used for the operation.
@@ -126,11 +144,20 @@ impl<T> ODrive<T> where T: Write + Read {
     /// `velocity_feed_forward` is the velocity feed forward term, in encoder counts per second.
     /// `current_feed_forward` is the current feed forward term, in amps.
     /// If `None` is supplied for a feed forward input, zero will be provided as a default.
-    pub fn set_position_p(&mut self, axis: AxisID, position: f32, velocity_feed_forward: Option<f32>,
-                          current_feed_forward: Option<f32>) -> io::Result<()> {
+    pub fn set_position_p(
+        &mut self,
+        axis: AxisID,
+        position: f32,
+        velocity_feed_forward: Option<f32>,
+        current_feed_forward: Option<f32>,
+    ) -> io::Result<()> {
         let velocity_feed_forward = velocity_feed_forward.unwrap_or_default();
         let current_feed_forward = current_feed_forward.unwrap_or_default();
-        writeln!(self, "p {} {} {} {}", axis as u8, position, velocity_feed_forward, current_feed_forward)?;
+        writeln!(
+            self,
+            "p {} {} {} {}",
+            axis as u8, position, velocity_feed_forward, current_feed_forward
+        )?;
         self.flush()
     }
 
@@ -140,11 +167,20 @@ impl<T> ODrive<T> where T: Write + Read {
     /// `velocity_limit` is the velocity limit, in encoder counts per second.
     /// `current_limit` is the current limit, in amps.
     /// If `None` is supplied for a limit, zero will be provided as a default.
-    pub fn set_position_q(&mut self, axis: AxisID, position: f32, velocity_limit: Option<f32>,
-                          current_limit: Option<f32>) -> io::Result<()> {
+    pub fn set_position_q(
+        &mut self,
+        axis: AxisID,
+        position: f32,
+        velocity_limit: Option<f32>,
+        current_limit: Option<f32>,
+    ) -> io::Result<()> {
         let velocity_limit = velocity_limit.unwrap_or_default();
         let current_limit = current_limit.unwrap_or_default();
-        writeln!(self, "q {} {} {} {}", axis as u8, position, velocity_limit, current_limit)?;
+        writeln!(
+            self,
+            "q {} {} {} {}",
+            axis as u8, position, velocity_limit, current_limit
+        )?;
         self.flush()
     }
 
@@ -153,9 +189,18 @@ impl<T> ODrive<T> where T: Write + Read {
     /// `velocity` is the velocity setpoint, in encoder counts per second.
     /// `current_feed_forward` is the current feed forward term, in amps.
     /// If `None` is supplied for a feed forward input, zero will be provided as a default.
-    pub fn set_velocity(&mut self, axis: AxisID, velocity: f32, current_feed_forward: Option<f32>) -> io::Result<()> {
+    pub fn set_velocity(
+        &mut self,
+        axis: AxisID,
+        velocity: f32,
+        current_feed_forward: Option<f32>,
+    ) -> io::Result<()> {
         let current_feed_forward = current_feed_forward.unwrap_or_default();
-        writeln!(self, "v {} {} {}", axis as u8, velocity, current_feed_forward)?;
+        writeln!(
+            self,
+            "v {} {} {}",
+            axis as u8, velocity, current_feed_forward
+        )?;
         self.flush()
     }
 
@@ -177,7 +222,10 @@ impl<T> ODrive<T> where T: Write + Read {
     }
 }
 
-impl<T> ODrive<T> where T: Read + Write {
+impl<T> ODrive<T>
+where
+    T: Read + Write,
+{
     /// Retrieves the velocity of a motor, in counts per second.
     pub fn get_velocity(&mut self, axis: AxisID) -> io::Result<Option<f32>> {
         writeln!(self, "r axis{}.encoder.vel_estimate", axis as u8)?;
@@ -191,9 +239,18 @@ impl<T> ODrive<T> where T: Read + Write {
     /// The current timeout is 10 seconds.
     ///
     /// This command will likely be deprecated and reworked in a future release.
-    pub fn run_state(&mut self, axis: AxisID, requested_state: AxisState, wait: bool) -> io::Result<bool> {
+    pub fn run_state(
+        &mut self,
+        axis: AxisID,
+        requested_state: AxisState,
+        wait: bool,
+    ) -> io::Result<bool> {
         let timer = Instant::now();
-        writeln!(self, "w axis{}.requested_state {}", axis as u8, requested_state as u8)?;
+        writeln!(
+            self,
+            "w axis{}.requested_state {}",
+            axis as u8, requested_state as u8
+        )?;
         self.flush()?;
         if wait {
             while {
@@ -210,7 +267,10 @@ impl<T> ODrive<T> where T: Read + Write {
 }
 
 // Implement private helper methods
-impl<T> ODrive<T> where T: Read + Write {
+impl<T> ODrive<T>
+where
+    T: Read + Write,
+{
     fn set_config_property<D: Display>(&mut self, param: &str, value: D) -> ODriveResult<()> {
         writeln!(self, "w {} {}", param, value).map_err(ODriveError::Io)?;
         self.flush().map_err(ODriveError::Io)
@@ -222,17 +282,22 @@ impl<T> ODrive<T> where T: Read + Write {
         self.read_odrive_response()
     }
 
-    fn set_axis_property<D: Display>(&mut self, axis: AxisID, property: &str, value: D) -> ODriveResult<()> {
+    fn set_axis_property<D: Display>(
+        &mut self,
+        axis: AxisID,
+        property: &str,
+        value: D,
+    ) -> ODriveResult<()> {
         let config = format!("axis{}.{}", axis as u8, property);
         self.set_config_property(&config, value)
     }
 
-    fn get_axis_property(&mut self, axis: AxisID, property: &str) -> ODriveResult<String> {
-        let config = format!("axis{}.{}", axis as u8, property);
-        self.get_config_property(&config)
-    }
-
-    fn set_axis_config_property<D: Display>(&mut self, axis: AxisID, name: &str, value: D) -> ODriveResult<()> {
+    fn set_axis_config_property<D: Display>(
+        &mut self,
+        axis: AxisID,
+        name: &str,
+        value: D,
+    ) -> ODriveResult<()> {
         let config = format!("axis{}.config.{}", axis as u8, name);
         self.set_config_property(&config, value)
     }
@@ -260,24 +325,43 @@ impl<T> ODrive<T> where T: Read + Write {
 /// > 5. `<axis>.config.startup_sensorless_control`
 ///
 /// For further information, see the documentation for `AxisState`.
-impl<T> ODrive<T> where T: Read + Write {
+impl<T> ODrive<T>
+where
+    T: Read + Write,
+{
     pub fn set_startup_motor_calibration(&mut self, axis: AxisID, value: bool) -> ODriveResult<()> {
         self.set_axis_config_property(axis, "startup_motor_calibration", value as u8)
     }
 
-    pub fn set_startup_encoder_index_search(&mut self, axis: AxisID, value: bool) -> ODriveResult<()> {
+    pub fn set_startup_encoder_index_search(
+        &mut self,
+        axis: AxisID,
+        value: bool,
+    ) -> ODriveResult<()> {
         self.set_axis_config_property(axis, "startup_encoder_index_search", value as u8)
     }
 
-    pub fn set_startup_encoder_offset_calibration(&mut self, axis: AxisID, value: bool) -> ODriveResult<()> {
+    pub fn set_startup_encoder_offset_calibration(
+        &mut self,
+        axis: AxisID,
+        value: bool,
+    ) -> ODriveResult<()> {
         self.set_axis_config_property(axis, "startup_encoder_offset_calibration", value as u8)
     }
 
-    pub fn set_startup_closed_loop_control(&mut self, axis: AxisID, value: bool) -> ODriveResult<()> {
+    pub fn set_startup_closed_loop_control(
+        &mut self,
+        axis: AxisID,
+        value: bool,
+    ) -> ODriveResult<()> {
         self.set_axis_config_property(axis, "startup_closed_loop_control", value as u8)
     }
 
-    pub fn set_startup_sensorless_control(&mut self, axis: AxisID, value: bool) -> ODriveResult<()> {
+    pub fn set_startup_sensorless_control(
+        &mut self,
+        axis: AxisID,
+        value: bool,
+    ) -> ODriveResult<()> {
         self.set_axis_config_property(axis, "startup_sensorless_control", value as u8)
     }
 
@@ -287,11 +371,9 @@ impl<T> ODrive<T> where T: Read + Write {
             Ok(val) => match val {
                 0 => Ok(false),
                 1 => Ok(true),
-                _ => Err(ODriveError::InvalidMessageReceived(response))
+                _ => Err(ODriveError::InvalidMessageReceived(response)),
             },
-            Err(_error) => {
-                Err(ODriveError::InvalidMessageReceived(response))
-            }
+            Err(_error) => Err(ODriveError::InvalidMessageReceived(response)),
         }
     }
 
@@ -301,11 +383,9 @@ impl<T> ODrive<T> where T: Read + Write {
             Ok(val) => match val {
                 0 => Ok(false),
                 1 => Ok(true),
-                _ => Err(ODriveError::InvalidMessageReceived(response))
+                _ => Err(ODriveError::InvalidMessageReceived(response)),
             },
-            Err(_error) => {
-                Err(ODriveError::InvalidMessageReceived(response))
-            }
+            Err(_error) => Err(ODriveError::InvalidMessageReceived(response)),
         }
     }
 
@@ -315,11 +395,9 @@ impl<T> ODrive<T> where T: Read + Write {
             Ok(val) => match val {
                 0 => Ok(false),
                 1 => Ok(true),
-                _ => Err(ODriveError::InvalidMessageReceived(response))
+                _ => Err(ODriveError::InvalidMessageReceived(response)),
             },
-            Err(_error) => {
-                Err(ODriveError::InvalidMessageReceived(response))
-            }
+            Err(_error) => Err(ODriveError::InvalidMessageReceived(response)),
         }
     }
 
@@ -329,11 +407,9 @@ impl<T> ODrive<T> where T: Read + Write {
             Ok(val) => match val {
                 0 => Ok(false),
                 1 => Ok(true),
-                _ => Err(ODriveError::InvalidMessageReceived(response))
+                _ => Err(ODriveError::InvalidMessageReceived(response)),
             },
-            Err(_error) => {
-                Err(ODriveError::InvalidMessageReceived(response))
-            }
+            Err(_error) => Err(ODriveError::InvalidMessageReceived(response)),
         }
     }
 
@@ -343,17 +419,18 @@ impl<T> ODrive<T> where T: Read + Write {
             Ok(val) => match val {
                 0 => Ok(false),
                 1 => Ok(true),
-                _ => Err(ODriveError::InvalidMessageReceived(response))
+                _ => Err(ODriveError::InvalidMessageReceived(response)),
             },
-            Err(_error) => {
-                Err(ODriveError::InvalidMessageReceived(response))
-            }
+            Err(_error) => Err(ODriveError::InvalidMessageReceived(response)),
         }
     }
 }
 
-/// Configuration management.
-impl<T> ODrive<T> where T: Read + Write {
+/// System commands.
+impl<T> ODrive<T>
+where
+    T: Read + Write,
+{
     /// Saves the current configuration of properties to the ODrives non-volatile memory, allowing
     /// the configuration to persist after reboots.
     pub fn save_configuration(&mut self) -> ODriveResult<()> {
@@ -366,23 +443,50 @@ impl<T> ODrive<T> where T: Read + Write {
         writeln!(self, "se").map_err(ODriveError::Io)?;
         self.flush().map_err(ODriveError::Io)
     }
+
+    /// Clear errors.
+    pub fn clear_errors(&mut self) -> ODriveResult<()> {
+        writeln!(self, "sc").map_err(ODriveError::Io)?;
+        self.flush().map_err(ODriveError::Io)
+    }
+
+    /// Reboot ODrive.
+    pub fn reboot(&mut self) -> ODriveResult<()> {
+        writeln!(self, "sr").map_err(ODriveError::Io)?;
+        self.flush().map_err(ODriveError::Io)
+    }
 }
 
 /// Motor configuration
-impl<T> ODrive<T> where T: Read + Write {
+impl<T> ODrive<T>
+where
+    T: Read + Write,
+{
     pub fn set_motor_pole_pairs(&mut self, axis: AxisID, value: u16) -> ODriveResult<()> {
         self.set_axis_property(axis, "motor.config.pole_pairs", value)
     }
 
-    pub fn set_motor_resistance_calib_max_voltage(&mut self, axis: AxisID, value: f32) -> ODriveResult<()> {
+    pub fn set_motor_resistance_calib_max_voltage(
+        &mut self,
+        axis: AxisID,
+        value: f32,
+    ) -> ODriveResult<()> {
         self.set_axis_property(axis, "motor.config.resistance_calib_max_voltage", value)
     }
 
-    pub fn set_motor_requested_current_range(&mut self, axis: AxisID, value: f32) -> ODriveResult<()> {
+    pub fn set_motor_requested_current_range(
+        &mut self,
+        axis: AxisID,
+        value: f32,
+    ) -> ODriveResult<()> {
         self.set_axis_property(axis, "motor.config.requested_current_range", value)
     }
 
-    pub fn set_motor_current_control_bandwidth(&mut self, axis: AxisID, value: f32) -> ODriveResult<()> {
+    pub fn set_motor_current_control_bandwidth(
+        &mut self,
+        axis: AxisID,
+        value: f32,
+    ) -> ODriveResult<()> {
         self.set_axis_property(axis, "motor.config.current_control_bandwidth", value)
     }
 
@@ -392,7 +496,10 @@ impl<T> ODrive<T> where T: Read + Write {
 }
 
 /// Encoder configuration
-impl<T> ODrive<T> where T: Read + Write {
+impl<T> ODrive<T>
+where
+    T: Read + Write,
+{
     pub fn set_encoder_mode(&mut self, axis: AxisID, value: EncoderMode) -> ODriveResult<()> {
         self.set_axis_property(axis, "encoder.config.mode", value as u8)
     }
@@ -411,7 +518,10 @@ impl<T> ODrive<T> where T: Read + Write {
 }
 
 /// Controller configuration
-impl<T> ODrive<T> where T: Read + Write {
+impl<T> ODrive<T>
+where
+    T: Read + Write,
+{
     pub fn set_position_gain(&mut self, axis: AxisID, value: f32) -> ODriveResult<()> {
         self.set_axis_property(axis, "controller.config.pos_gain", value)
     }

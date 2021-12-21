@@ -12,6 +12,8 @@ mod test_stream;
 
 pub mod prelude {
     pub use crate::commands::ODrive;
-    pub use crate::enumerations::{AxisID, AxisState, EncoderMode, ControlMode, MotorType};
-    pub use crate::enumerations::errors::{ODriveError, EncoderError, AxisError, ControllerError, MotorError, ODriveResult};
+    pub use crate::enumerations::errors::{
+        AxisError, ControllerError, EncoderError, MotorError, ODriveError, ODriveResult,
+    };
+    pub use crate::enumerations::{AxisID, AxisState, ControlMode, EncoderMode, MotorType};
 }
