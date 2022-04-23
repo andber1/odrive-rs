@@ -10,6 +10,8 @@ use crate::enumerations::{AxisID, AxisState, ControlMode, EncoderMode};
 #[cfg_attr(tarpaulin, skip)]
 mod command_tests;
 
+const READ_TIMEOUT: u128 = 100;
+
 /// The `ODrive` struct manages a connection with an ODrive motor over the ASCII protocol.
 /// It acts as a newtype around a connection stream.
 /// This has been tested using serial types from `serialport-rs`.
@@ -77,7 +79,7 @@ where
         loop {
             let mut buffer = [0; 1];
             while self.read(&mut buffer).unwrap_or_default() == 0 {
-                if duration.elapsed().as_millis() >= 1_000 {
+                if duration.elapsed().as_millis() >= READ_TIMEOUT {
                     return Ok(None);
                 }
             }
@@ -98,7 +100,7 @@ where
         loop {
             let mut buffer = [0; 1];
             while self.read(&mut buffer).unwrap_or_default() == 0 {
-                if duration.elapsed().as_millis() >= 1_000 {
+                if duration.elapsed().as_millis() >= READ_TIMEOUT {
                     return Err(ODriveError::NoMessageReceived);
                 }
             }
@@ -219,6 +221,40 @@ where
     pub fn set_trajectory(&mut self, axis: AxisID, position: f32) -> io::Result<()> {
         writeln!(self, "t {} {}", axis as u8, position)?;
         self.flush()
+    }
+
+    /// Convenience function for setting both currents and requesting feedback
+    /// Feedback can be obtained some time later with try_read_both_velocities function
+    /// To be meant for calling in a fast loop (no flush which would take about 30 ms with SerialPort crate)
+    pub fn set_both_currents_and_request_feedback(
+        &mut self,
+        current_axis0: f32,
+        current_axis1: f32,
+    ) -> io::Result<()> {
+        writeln!(self, "c 0 {}", current_axis0)?;
+        writeln!(self, "c 1 {}", current_axis1)?;
+        writeln!(self, "f 0")?;
+        writeln!(self, "f 1")?;
+        Ok(())
+    }
+    /// Convenience function for setting both currents and requesting both velocities (in turns/s)
+    pub fn try_read_both_velocities(&mut self) -> (Option<f32>, Option<f32>) {
+        let mut buf = [0; 128];
+        let size = self.read(&mut buf).unwrap_or_default();
+
+        let mut velocities: Vec<f32> = Vec::new();
+        if let Ok(str_buf) = std::str::from_utf8(&buf[0..size]) {
+            for line in str_buf.lines().rev() {
+                let values = line
+                    .split_whitespace()
+                    .flat_map(str::parse::<f32>)
+                    .collect::<Vec<_>>();
+                if values.len() == 2 {
+                    velocities.push(values[1]);
+                }
+            }
+        }
+        (velocities.pop(), velocities.pop())
     }
 }
 
@@ -454,6 +490,37 @@ where
     pub fn reboot(&mut self) -> ODriveResult<()> {
         writeln!(self, "sr").map_err(ODriveError::Io)?;
         self.flush().map_err(ODriveError::Io)
+    }
+
+    fn read_axis_errors(&mut self, axis: AxisID) -> ODriveResult<String> {
+        let axis = axis as u8;
+        let mut result = String::new();
+        result += "Motor=";
+        result += &self.get_config_property(&format!("axis{axis}.motor.error"))?;
+        result += ", Controller=";
+        result += &self.get_config_property(&format!("axis{axis}.controller.error"))?;
+        result += ", Encoder=";
+        result += &self.get_config_property(&format!("axis{axis}.encoder.error"))?;
+
+        Ok(result)
+    }
+
+    /// Read all errors and return them as string.
+    pub fn read_all_errors(&mut self) -> ODriveResult<String> {
+        // flush input buffer
+        let duration = Instant::now();
+        let mut buffer = [0; 1];
+        while duration.elapsed().as_millis() < 10 {
+            self.read(&mut buffer).unwrap_or_default();
+        }
+        let mut result = String::new();
+        result += "Config=";
+        result += &self.get_config_property("error")?;
+        result += "\nAxis0: ";
+        result += &self.read_axis_errors(AxisID::Zero)?;
+        result += "\nAxis1: ";
+        result += &self.read_axis_errors(AxisID::One)?;
+        Ok(result)
     }
 }
 
